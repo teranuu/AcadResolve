@@ -1,18 +1,41 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import './NavBar.css'
 
 export default function NavBar({ user, onLogin, onLogout }) {
     const [showMenu, setShowMenu] = useState(false)
     const [showLoginModal, setShowLoginModal] = useState(false)
+    const menuRef = useRef(null)
     const [loginForm, setLoginForm] = useState({
         username: '',
         password: '',
         role: 'student',
     })
 
-    const handleMenuClick = () => {
+    // Close menu when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (menuRef.current && !menuRef.current.contains(event.target)) {
+                console.log('[NavBar] Click outside detected, closing menu')
+                setShowMenu(false)
+            }
+        }
+
+        if (showMenu) {
+            document.addEventListener('mousedown', handleClickOutside)
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside)
+        }
+    }, [showMenu])
+
+    const handleMenuClick = (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        console.log('[NavBar] Menu clicked. User:', user, 'Current showMenu:', showMenu)
         if (user) {
             setShowMenu(!showMenu)
+            console.log('[NavBar] Toggling menu to:', !showMenu)
         } else {
             setShowLoginModal(true)
         }
@@ -55,7 +78,10 @@ export default function NavBar({ user, onLogin, onLogout }) {
         setShowMenu(false)
     }
 
-    const handleLogout = () => {
+    const handleLogout = (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        console.log('[NavBar] Logout clicked')
         onLogout()
         setShowMenu(false)
     }
@@ -92,8 +118,9 @@ export default function NavBar({ user, onLogin, onLogout }) {
                 <div className="navbar-brand">
                     <h2>📚 AcadResolve</h2>
                 </div>
-                <div className="navbar-menu">
+                <div className="navbar-menu" ref={menuRef}>
                     <button
+                        type="button"
                         className={`menu-badge ${user ? getRoleBadgeClass(user.role) : ''}`}
                         onClick={handleMenuClick}
                     >
@@ -114,6 +141,7 @@ export default function NavBar({ user, onLogin, onLogout }) {
                             </div>
                             <hr />
                             <button
+                                type="button"
                                 className="menu-item logout"
                                 onClick={handleLogout}
                             >

@@ -52,6 +52,7 @@ export default function App() {
 
     // Handle logout
     const handleLogout = () => {
+        console.log('[App] handleLogout called')
         // Clear session from localStorage
         localStorage.removeItem('acadresolve_user')
         setUser(null)
@@ -60,6 +61,7 @@ export default function App() {
         incidentService.setUser(null, null)
         setShowForm(false)
         setSelectedIncident(null)
+        console.log('[App] User logged out, state cleared')
         alert('You have been logged out')
     }
 

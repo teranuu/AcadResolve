@@ -36,6 +36,8 @@
     font-weight: 500;
     transition: all 0.3s ease;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    pointer-events: auto;
+    user-select: none;
 }
 
 .menu-badge:hover {
@@ -159,6 +161,8 @@
     font-size: 0.9rem;
     color: #333;
     transition: background 0.2s ease;
+    pointer-events: auto;
+    font-family: inherit;
 }
 
 .menu-item:hover {
