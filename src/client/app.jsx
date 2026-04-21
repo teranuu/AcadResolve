@@ -10,6 +10,8 @@ export default function App() {
     const [showForm, setShowForm] = useState(false)
     const [selectedIncident, setSelectedIncident] = useState(null)
     const [error, setError] = useState(null)
+    const [stats, setStats] = useState(null)
+    const [filter, setFilter] = useState('all') // all, pending, assessed, approved
 
     const incidentService = useMemo(() => new IncidentService(), [])
 
@@ -19,6 +21,10 @@ export default function App() {
             setError(null)
             const data = await incidentService.list()
             setIncidents(data)
+            
+            // Fetch stats
+            const statsData = await incidentService.getDashboardStats()
+            setStats(statsData)
         } catch (err) {
             setError('Failed to load incidents: ' + (err.message || 'Unknown error'))
             console.error(err)
@@ -50,13 +56,11 @@ export default function App() {
         setLoading(true)
         try {
             if (selectedIncident) {
-                const sysId =
-                    typeof selectedIncident.sys_id === 'object'
-                        ? selectedIncident.sys_id.value
-                        : selectedIncident.sys_id
-                await incidentService.update(sysId, formData)
+                await incidentService.update(selectedIncident.sys_id, formData)
+                alert('Incident updated successfully!')
             } else {
-                await incidentService.create(formData)
+                const result = await incidentService.create(formData)
+                alert(`Incident created: ${result.incident_number}`)
             }
             setShowForm(false)
             await refreshIncidents()
@@ -68,36 +72,117 @@ export default function App() {
         }
     }
 
+    // Filter incidents based on selected filter
+    const filteredIncidents = incidents.filter((incident) => {
+        if (filter === 'all') return true
+        if (filter === 'pending') return incident.assessment_status === 'Pending'
+        if (filter === 'assessed') return incident.assessment_status === 'Assessed'
+        if (filter === 'approved') return incident.approval_status === 'Approved'
+        return true
+    })
+
     return (
         <div className="incident-app">
             <header className="app-header">
-                <h1>Incident Response Manager</h1>
+                <div className="header-content">
+                    <h1>📚 AcadResolve - Book Incident Management</h1>
+                    <p className="subtitle">
+                        Fair charges for lost/damaged items with integrated assessment and settlement
+                    </p>
+                </div>
                 <button className="create-button" onClick={handleCreateClick}>
-                    Create New Incident
+                    + Report Incident
                 </button>
             </header>
 
+            {/* Dashboard Stats */}
+            {stats && (
+                <div className="dashboard-stats">
+                    <div className="stat-card">
+                        <h3>Total Incidents</h3>
+                        <p className="stat-value">{stats.total_incidents}</p>
+                    </div>
+                    <div className="stat-card pending">
+                        <h3>Pending Assessment</h3>
+                        <p className="stat-value">{stats.pending_assessment}</p>
+                    </div>
+                    <div className="stat-card approval">
+                        <h3>Pending Approval</h3>
+                        <p className="stat-value">{stats.pending_approval}</p>
+                    </div>
+                    <div className="stat-card payment">
+                        <h3>Pending Payment</h3>
+                        <p className="stat-value">{stats.pending_payment}</p>
+                    </div>
+                    <div className="stat-card charges">
+                        <h3>Total Charges</h3>
+                        <p className="stat-value">${parseFloat(stats.total_charges || 0).toFixed(2)}</p>
+                    </div>
+                </div>
+            )}
+
+            {/* Error Message */}
             {error && (
                 <div className="error-message">
-                    {error}
+                    <span>{error}</span>
                     <button onClick={() => setError(null)}>Dismiss</button>
                 </div>
             )}
 
+            {/* Filter Tabs */}
+            <div className="filter-tabs">
+                <button
+                    className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
+                    onClick={() => setFilter('all')}
+                >
+                    All Incidents ({incidents.length})
+                </button>
+                <button
+                    className={`filter-btn ${filter === 'pending' ? 'active' : ''}`}
+                    onClick={() => setFilter('pending')}
+                >
+                    Pending Assessment (
+                    {incidents.filter((i) => i.assessment_status === 'Pending').length})
+                </button>
+                <button
+                    className={`filter-btn ${filter === 'assessed' ? 'active' : ''}`}
+                    onClick={() => setFilter('assessed')}
+                >
+                    Assessed ({incidents.filter((i) => i.assessment_status === 'Assessed').length})
+                </button>
+                <button
+                    className={`filter-btn ${filter === 'approved' ? 'active' : ''}`}
+                    onClick={() => setFilter('approved')}
+                >
+                    Approved ({incidents.filter((i) => i.approval_status === 'Approved').length})
+                </button>
+            </div>
+
+            {/* Incident List */}
             {loading ? (
-                <div className="loading">Loading...</div>
+                <div className="loading">
+                    <div className="spinner"></div>
+                    <p>Loading book incidents...</p>
+                </div>
             ) : (
                 <IncidentList
-                    incidents={incidents}
+                    incidents={filteredIncidents}
                     onEdit={handleEditClick}
                     onRefresh={refreshIncidents}
                     service={incidentService}
                 />
             )}
 
+            {/* Incident Form Modal */}
             {showForm && (
-                <IncidentForm incident={selectedIncident} onSubmit={handleFormSubmit} onCancel={handleFormClose} />
+                <IncidentForm
+                    incident={selectedIncident}
+                    onSubmit={handleFormSubmit}
+                    onCancel={handleFormClose}
+                    service={incidentService}
+                />
             )}
         </div>
     )
 }
+

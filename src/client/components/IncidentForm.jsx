@@ -1,35 +1,39 @@
 import React, { useState, useEffect } from 'react'
 import './IncidentForm.css'
 
-export default function IncidentForm({ incident, onSubmit, onCancel }) {
+export default function IncidentForm({ incident, onSubmit, onCancel, service }) {
     const isEditing = !!incident
+    const [estimatedFee, setEstimatedFee] = useState(0)
+    const [loading, setLoading] = useState(false)
 
     // Initialize form state
     const [formData, setFormData] = useState({
-        short_description: '',
+        book_title: '',
+        book_isbn: '',
+        student_name: '',
+        student_email: '',
+        student_id: '',
+        incident_type: 'Damaged',
+        incident_date: new Date().toISOString().split('T')[0],
         description: '',
-        state: '1',
-        impact: '2',
+        replacement_cost: '',
+        photo_url: '',
     })
 
     // Load incident data if editing
     useEffect(() => {
         if (incident) {
-            // Extract primitive values from potential objects
-            const shortDesc =
-                typeof incident.short_description === 'object'
-                    ? incident.short_description.value
-                    : incident.short_description
-            const description =
-                typeof incident.description === 'object' ? incident.description.value : incident.description
-            const state = typeof incident.state === 'object' ? incident.state.value : incident.state
-            const impact = typeof incident.impact === 'object' ? incident.impact.value : incident.impact
-
             setFormData({
-                short_description: shortDesc || '',
-                description: description || '',
-                state: state || '1',
-                impact: impact || '2',
+                book_title: incident.book_title || '',
+                book_isbn: incident.book_isbn || '',
+                student_name: incident.student_name || '',
+                student_email: incident.student_email || '',
+                student_id: incident.student_id || '',
+                incident_type: incident.incident_type || 'Damaged',
+                incident_date: incident.incident_date || new Date().toISOString().split('T')[0],
+                description: incident.description || '',
+                replacement_cost: incident.replacement_cost || '',
+                photo_url: incident.photo_url || '',
             })
         }
     }, [incident])
@@ -40,64 +44,240 @@ export default function IncidentForm({ incident, onSubmit, onCancel }) {
             ...prev,
             [name]: value,
         }))
+
+        // Calculate fee when replacement cost or type changes
+        if (name === 'replacement_cost' || name === 'incident_type') {
+            const cost = name === 'replacement_cost' ? value : formData.replacement_cost
+            const type = name === 'incident_type' ? value : formData.incident_type
+            if (cost) {
+                calculateFee(cost, type)
+            }
+        }
+    }
+
+    const calculateFee = async (cost, type) => {
+        if (!service) return
+        try {
+            setLoading(true)
+            const result = await service.calculateFee(cost, type)
+            setEstimatedFee(result.total_charge || 0)
+        } catch (error) {
+            console.error('Error calculating fee:', error)
+        } finally {
+            setLoading(false)
+        }
     }
 
     const handleSubmit = (e) => {
         e.preventDefault()
+        if (!formData.book_title || !formData.student_name || !formData.student_email) {
+            alert('Please fill in all required fields')
+            return
+        }
         onSubmit(formData)
     }
 
     return (
         <div className="form-overlay">
-            <div className="form-container">
+            <div className="form-container book-incident-form">
                 <div className="form-header">
-                    <h2>{isEditing ? `Edit ${incident.number.display_value}` : 'Create New Incident'}</h2>
+                    <h2>{isEditing ? 'Edit Book Incident' : 'Report Book Incident'}</h2>
                     <button type="button" className="close-button" onClick={onCancel}>
                         ×
                     </button>
                 </div>
                 <form onSubmit={handleSubmit}>
-                    <div className="form-group">
-                        <label htmlFor="short_description">Short Description *</label>
-                        <input
-                            type="text"
-                            id="short_description"
-                            name="short_description"
-                            value={formData.short_description}
-                            onChange={handleChange}
-                            required
-                            maxLength={160}
-                        />
-                    </div>
-
-                    <div className="form-group">
-                        <label htmlFor="description">Description</label>
-                        <textarea
-                            id="description"
-                            name="description"
-                            value={formData.description}
-                            onChange={handleChange}
-                            rows={5}
-                            maxLength={4000}
-                        />
-                    </div>
-
-                    <div className="form-row">
-                        <div className="form-group">
-                            <label htmlFor="state">State</label>
-                            <select id="state" name="state" value={formData.state} onChange={handleChange}>
-                                <option value="1">New</option>
-                                <option value="2">In Progress</option>
-                                <option value="3">On Hold</option>
-                                <option value="6">Resolved</option>
-                                <option value="7">Closed</option>
-                            </select>
+                    {/* Student Information */}
+                    <fieldset>
+                        <legend>Student Information</legend>
+                        <div className="form-row">
+                            <div className="form-group">
+                                <label htmlFor="student_name">
+                                    Student Name *
+                                </label>
+                                <input
+                                    type="text"
+                                    id="student_name"
+                                    name="student_name"
+                                    value={formData.student_name}
+                                    onChange={handleChange}
+                                    required
+                                    disabled={isEditing}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label htmlFor="student_id">
+                                    Student ID *
+                                </label>
+                                <input
+                                    type="text"
+                                    id="student_id"
+                                    name="student_id"
+                                    value={formData.student_id}
+                                    onChange={handleChange}
+                                    required
+                                    disabled={isEditing}
+                                />
+                            </div>
                         </div>
-
                         <div className="form-group">
-                            <label htmlFor="impact">Impact</label>
-                            <select id="impact" name="impact" value={formData.impact} onChange={handleChange}>
-                                <option value="1">1 - High</option>
+                            <label htmlFor="student_email">
+                                Student Email *
+                            </label>
+                            <input
+                                type="email"
+                                id="student_email"
+                                name="student_email"
+                                value={formData.student_email}
+                                onChange={handleChange}
+                                required
+                                disabled={isEditing}
+                            />
+                        </div>
+                    </fieldset>
+
+                    {/* Book Information */}
+                    <fieldset>
+                        <legend>Book Information</legend>
+                        <div className="form-group">
+                            <label htmlFor="book_title">
+                                Book Title *
+                            </label>
+                            <input
+                                type="text"
+                                id="book_title"
+                                name="book_title"
+                                value={formData.book_title}
+                                onChange={handleChange}
+                                required
+                                placeholder="Enter the title of the book"
+                            />
+                        </div>
+                        <div className="form-row">
+                            <div className="form-group">
+                                <label htmlFor="book_isbn">
+                                    ISBN
+                                </label>
+                                <input
+                                    type="text"
+                                    id="book_isbn"
+                                    name="book_isbn"
+                                    value={formData.book_isbn}
+                                    onChange={handleChange}
+                                    placeholder="ISBN-13"
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label htmlFor="incident_type">
+                                    Incident Type *
+                                </label>
+                                <select
+                                    id="incident_type"
+                                    name="incident_type"
+                                    value={formData.incident_type}
+                                    onChange={handleChange}
+                                >
+                                    <option value="Damaged">Damaged</option>
+                                    <option value="Loss">Lost</option>
+                                </select>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    {/* Incident Details */}
+                    <fieldset>
+                        <legend>Incident Details</legend>
+                        <div className="form-group">
+                            <label htmlFor="incident_date">
+                                Incident Date *
+                            </label>
+                            <input
+                                type="date"
+                                id="incident_date"
+                                name="incident_date"
+                                value={formData.incident_date}
+                                onChange={handleChange}
+                                required
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="description">
+                                Description
+                            </label>
+                            <textarea
+                                id="description"
+                                name="description"
+                                value={formData.description}
+                                onChange={handleChange}
+                                rows={4}
+                                placeholder="Describe what happened to the book"
+                            />
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="photo_url">
+                                Photo URL (Evidence)
+                            </label>
+                            <input
+                                type="url"
+                                id="photo_url"
+                                name="photo_url"
+                                value={formData.photo_url}
+                                onChange={handleChange}
+                                placeholder="https://example.com/photo.jpg"
+                            />
+                        </div>
+                    </fieldset>
+
+                    {/* Cost Information */}
+                    <fieldset>
+                        <legend>Cost Information</legend>
+                        <div className="form-group">
+                            <label htmlFor="replacement_cost">
+                                Replacement Cost ($) *
+                            </label>
+                            <input
+                                type="number"
+                                id="replacement_cost"
+                                name="replacement_cost"
+                                value={formData.replacement_cost}
+                                onChange={handleChange}
+                                step="0.01"
+                                min="0"
+                                required
+                                placeholder="0.00"
+                            />
+                        </div>
+                        {estimatedFee > 0 && (
+                            <div className="fee-summary">
+                                <p>
+                                    <strong>Replacement Cost:</strong> $
+                                    {parseFloat(formData.replacement_cost || 0).toFixed(2)}
+                                </p>
+                                <p>
+                                    <strong>Fee ({formData.incident_type === 'Loss' ? '100%' : '10%'}):</strong> $
+                                    {(estimatedFee - parseFloat(formData.replacement_cost || 0)).toFixed(2)}
+                                </p>
+                                <p className="total">
+                                    <strong>Estimated Total Charge:</strong> ${estimatedFee.toFixed(2)}
+                                </p>
+                            </div>
+                        )}
+                    </fieldset>
+
+                    <div className="form-actions">
+                        <button type="button" className="cancel-button" onClick={onCancel}>
+                            Cancel
+                        </button>
+                        <button type="submit" className="submit-button" disabled={loading}>
+                            {loading ? 'Processing...' : isEditing ? 'Update' : 'Submit Incident'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    )
+}
+
                                 <option value="2">2 - Medium</option>
                                 <option value="3">3 - Low</option>
                             </select>

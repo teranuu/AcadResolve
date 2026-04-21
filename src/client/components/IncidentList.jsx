@@ -1,127 +1,177 @@
 import React from 'react'
 import './IncidentList.css'
 
-export default function IncidentList({ incidents, onEdit, onRefresh, service }) {
-    const handleDelete = async (incident) => {
-        if (!confirm(`Are you sure you want to delete ${incident.number.display_value}?`)) {
+export default function IncidentList({ incidents, onEdit, onRefresh, onAction, service }) {
+    const getStatusClass = (status) => {
+        switch (status) {
+            case 'Pending':
+                return 'status-pending'
+            case 'Assessed':
+                return 'status-assessed'
+            case 'Approved':
+                return 'status-approved'
+            case 'Paid':
+                return 'status-paid'
+            case 'Rejected':
+                return 'status-rejected'
+            default:
+                return ''
+        }
+    }
+
+    const handleAssess = async (incident) => {
+        if (!window.confirm('Assess this incident and calculate fees?')) {
             return
         }
-
         try {
-            const sysId = typeof incident.sys_id === 'object' ? incident.sys_id.value : incident.sys_id
-            await service.delete(sysId)
+            await service.assess(incident.sys_id)
+            alert('Incident assessed successfully!')
             onRefresh()
         } catch (error) {
-            console.error('Failed to delete incident:', error)
-            alert('Failed to delete incident: ' + (error.message || 'Unknown error'))
+            alert('Failed to assess incident: ' + error.message)
         }
     }
 
-    const getStateClass = (state) => {
-        const stateValue = typeof state === 'object' ? state.display_value : state
-
-        switch (stateValue) {
-            case 'New':
-                return 'state-new'
-            case 'In Progress':
-                return 'state-in-progress'
-            case 'On Hold':
-                return 'state-on-hold'
-            case 'Resolved':
-                return 'state-resolved'
-            case 'Closed':
-                return 'state-closed'
-            default:
-                return ''
+    const handleApprove = async (incident) => {
+        if (!window.confirm('Approve this incident?')) {
+            return
+        }
+        try {
+            await service.approve(incident.sys_id)
+            alert('Incident approved and payment request sent to student!')
+            onRefresh()
+        } catch (error) {
+            alert('Failed to approve incident: ' + error.message)
         }
     }
 
-    const getImpactClass = (impact) => {
-        const impactValue = typeof impact === 'object' ? impact.value : impact
+    const handleReject = async (incident) => {
+        const reason = window.prompt('Enter rejection reason:')
+        if (!reason) return
 
-        switch (impactValue) {
-            case '1':
-                return 'impact-high'
-            case '2':
-                return 'impact-medium'
-            case '3':
-                return 'impact-low'
-            default:
-                return ''
+        try {
+            await service.reject(incident.sys_id, reason)
+            alert('Incident rejected!')
+            onRefresh()
+        } catch (error) {
+            alert('Failed to reject incident: ' + error.message)
+        }
+    }
+
+    const handleRecordPayment = async (incident) => {
+        const status = window.confirm('Mark as Paid? (OK=Paid, Cancel=Waived)')
+        if (status === null) return
+
+        try {
+            await service.recordPayment(incident.sys_id, status ? 'Paid' : 'Waived')
+            alert('Payment recorded successfully!')
+            onRefresh()
+        } catch (error) {
+            alert('Failed to record payment: ' + error.message)
         }
     }
 
     return (
         <div className="incident-list">
             {incidents.length === 0 ? (
-                <div className="no-incidents">No incidents found</div>
+                <div className="no-incidents">No book incidents found</div>
             ) : (
                 <table>
                     <thead>
                         <tr>
-                            <th>Number</th>
-                            <th>Description</th>
-                            <th>State</th>
-                            <th>Impact</th>
-                            <th>Opened</th>
+                            <th>Incident #</th>
+                            <th>Book Title</th>
+                            <th>Student</th>
+                            <th>Type</th>
+                            <th>Assessment</th>
+                            <th>Charge</th>
+                            <th>Payment</th>
+                            <th>Approval</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {incidents.map((incident) => {
-                            // Extract primitive values from potential objects
-                            const number =
-                                typeof incident.number === 'object' ? incident.number.display_value : incident.number
-                            const shortDesc =
-                                typeof incident.short_description === 'object'
-                                    ? incident.short_description.display_value
-                                    : incident.short_description
-                            const state =
-                                typeof incident.state === 'object' ? incident.state.display_value : incident.state
-                            const impact =
-                                typeof incident.impact === 'object' ? incident.impact.display_value : incident.impact
-                            const openedAt =
-                                typeof incident.opened_at === 'object'
-                                    ? incident.opened_at.display_value
-                                    : incident.opened_at
-
-                            return (
-                                <tr key={typeof incident.sys_id === 'object' ? incident.sys_id.value : incident.sys_id}>
-                                    <td>{number}</td>
-                                    <td>{shortDesc}</td>
-                                    <td>
-                                        <span className={`state-badge ${getStateClass(incident.state)}`}>{state}</span>
-                                    </td>
-                                    <td>
-                                        <span className={`impact-badge ${getImpactClass(incident.impact)}`}>
-                                            {impact}
-                                        </span>
-                                    </td>
-                                    <td>{openedAt}</td>
-                                    <td>
-                                        <div className="action-buttons">
+                        {incidents.map((incident) => (
+                            <tr key={incident.sys_id}>
+                                <td className="incident-number">{incident.incident_number}</td>
+                                <td className="book-title">{incident.book_title}</td>
+                                <td className="student-name">{incident.student_name}</td>
+                                <td>
+                                    <span className="type-badge">
+                                        {incident.incident_type}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span className={`status-badge ${getStatusClass(incident.assessment_status)}`}>
+                                        {incident.assessment_status}
+                                    </span>
+                                </td>
+                                <td className="charge">${parseFloat(incident.total_charge || 0).toFixed(2)}</td>
+                                <td>
+                                    <span className={`status-badge ${getStatusClass(incident.payment_status)}`}>
+                                        {incident.payment_status}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span className={`status-badge ${getStatusClass(incident.approval_status)}`}>
+                                        {incident.approval_status}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div className="action-buttons">
+                                        {incident.assessment_status === 'Pending' && (
                                             <button
-                                                className="edit-button"
-                                                onClick={() => onEdit(incident)}
-                                                aria-label={`Edit incident ${number}`}
+                                                className="action-btn assess-btn"
+                                                onClick={() => handleAssess(incident)}
+                                                title="Assess and calculate fees"
                                             >
-                                                Edit
+                                                Assess
                                             </button>
-                                            <button
-                                                className="delete-button"
-                                                onClick={() => handleDelete(incident)}
-                                                aria-label={`Delete incident ${number}`}
-                                            >
-                                                Delete
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            )
-                        })}
+                                        )}
+                                        {incident.assessment_status === 'Assessed' &&
+                                            incident.approval_status === 'Pending' && (
+                                                <>
+                                                    <button
+                                                        className="action-btn approve-btn"
+                                                        onClick={() => handleApprove(incident)}
+                                                        title="Approve incident"
+                                                    >
+                                                        Approve
+                                                    </button>
+                                                    <button
+                                                        className="action-btn reject-btn"
+                                                        onClick={() => handleReject(incident)}
+                                                        title="Reject incident"
+                                                    >
+                                                        Reject
+                                                    </button>
+                                                </>
+                                            )}
+                                        {incident.approval_status === 'Approved' &&
+                                            incident.payment_status === 'Pending' && (
+                                                <button
+                                                    className="action-btn payment-btn"
+                                                    onClick={() => handleRecordPayment(incident)}
+                                                    title="Record payment"
+                                                >
+                                                    Payment
+                                                </button>
+                                            )}
+                                        <button
+                                            className="action-btn edit-btn"
+                                            onClick={() => onEdit(incident)}
+                                            title="Edit incident"
+                                        >
+                                            Edit
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
                     </tbody>
                 </table>
             )}
         </div>
     )
 }
+
