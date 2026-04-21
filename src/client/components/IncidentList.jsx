@@ -41,7 +41,8 @@ export default function IncidentList({ incidents, onEdit, onRefresh, onAction, s
             console.log(`Assessing incident: ${incident.sys_id}`);
             const result = await service.assess(incident.sys_id)
             console.log('Assess result:', result);
-            alert(`Incident assessed successfully! Charge: $${result.total_charge?.toFixed(2) || 'calculated'}`)
+            const chargeDisplay = result.total_charge ? parseFloat(result.total_charge).toFixed(2) : 'calculated';
+            alert(`Incident assessed successfully! Charge: $${chargeDisplay}`)
             if (onRefresh) {
                 await onRefresh()
                 console.log('Incidents refreshed after assess');
