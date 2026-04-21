@@ -250,6 +250,17 @@
     transform: translateY(-1px);
 }
 
+.delete-btn {
+    background-color: #ffebe6;
+    color: #ff4d4f;
+    border: 1px solid #ffccc7;
+}
+
+.delete-btn:hover {
+    background-color: #ffccc7;
+    transform: translateY(-1px);
+}
+
 .no-incidents {
     padding: 40px 20px;
     text-align: center;

@@ -121,17 +121,26 @@ export default function App() {
     const handleFormSubmit = async (formData) => {
         setLoading(true)
         try {
-            // Add user info to form data
-            const dataWithUser = {
-                ...formData,
-                student_name: user.username,
-                student_email: user.email,
-            }
-
             if (selectedIncident) {
-                await incidentService.update(selectedIncident.sys_id, dataWithUser)
+                // Editing - preserve original student info, update only editable fields
+                const updateData = {
+                    book_title: formData.book_title,
+                    book_isbn: formData.book_isbn,
+                    incident_type: formData.incident_type,
+                    incident_date: formData.incident_date,
+                    description: formData.description,
+                    replacement_cost: formData.replacement_cost,
+                    photo_url: formData.photo_url,
+                }
+                await incidentService.update(selectedIncident.sys_id, updateData)
                 alert('Incident updated successfully!')
             } else {
+                // Creating new - add logged-in user info
+                const dataWithUser = {
+                    ...formData,
+                    student_name: user.username,
+                    student_email: user.email,
+                }
                 const result = await incidentService.create(dataWithUser)
                 alert(`Incident created: ${result.incident_number}`)
             }

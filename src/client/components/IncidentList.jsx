@@ -1,7 +1,7 @@
 import React from 'react'
 import './IncidentList.css'
 
-export default function IncidentList({ incidents, onEdit, onRefresh, onAction, service }) {
+export default function IncidentList({ incidents, onEdit, onRefresh, onAction, service, userRole }) {
     const getStatusClass = (status) => {
         switch (status) {
             case 'Pending':
@@ -16,6 +16,19 @@ export default function IncidentList({ incidents, onEdit, onRefresh, onAction, s
                 return 'status-rejected'
             default:
                 return ''
+        }
+    }
+
+    const handleDelete = async (incident) => {
+        if (!window.confirm(`Are you sure you want to delete incident #${incident.incident_number}? This action cannot be undone.`)) {
+            return
+        }
+        try {
+            await service.delete(incident.sys_id)
+            alert('Incident deleted successfully!')
+            if (onRefresh) await onRefresh()
+        } catch (error) {
+            alert('Failed to delete incident: ' + error.message)
         }
     }
 
@@ -119,7 +132,8 @@ export default function IncidentList({ incidents, onEdit, onRefresh, onAction, s
                                 </td>
                                 <td>
                                     <div className="action-buttons">
-                                        {incident.assessment_status === 'Pending' && (
+                                        {/* Assessment actions - Manager/Admin only */}
+                                        {['manager', 'admin'].includes(userRole) && incident.assessment_status === 'Pending' && (
                                             <button
                                                 className="action-btn assess-btn"
                                                 onClick={() => handleAssess(incident)}
@@ -128,7 +142,8 @@ export default function IncidentList({ incidents, onEdit, onRefresh, onAction, s
                                                 Assess
                                             </button>
                                         )}
-                                        {incident.assessment_status === 'Assessed' &&
+                                        {/* Approval actions - Manager/Admin only */}
+                                        {['manager', 'admin'].includes(userRole) && incident.assessment_status === 'Assessed' &&
                                             incident.approval_status === 'Pending' && (
                                                 <>
                                                     <button
@@ -147,7 +162,8 @@ export default function IncidentList({ incidents, onEdit, onRefresh, onAction, s
                                                     </button>
                                                 </>
                                             )}
-                                        {incident.approval_status === 'Approved' &&
+                                        {/* Payment actions - Manager/Admin only */}
+                                        {['manager', 'admin'].includes(userRole) && incident.approval_status === 'Approved' &&
                                             incident.payment_status === 'Pending' && (
                                                 <button
                                                     className="action-btn payment-btn"
@@ -157,13 +173,26 @@ export default function IncidentList({ incidents, onEdit, onRefresh, onAction, s
                                                     Payment
                                                 </button>
                                             )}
-                                        <button
-                                            className="action-btn edit-btn"
-                                            onClick={() => onEdit(incident)}
-                                            title="Edit incident"
-                                        >
-                                            Edit
-                                        </button>
+                                        {/* Edit - Students for own incidents, Admins for any */}
+                                        {(userRole === 'student' || userRole === 'admin') && (
+                                            <button
+                                                className="action-btn edit-btn"
+                                                onClick={() => onEdit(incident)}
+                                                title="Edit incident"
+                                            >
+                                                Edit
+                                            </button>
+                                        )}
+                                        {/* Delete - Admin only */}
+                                        {userRole === 'admin' && (
+                                            <button
+                                                className="action-btn delete-btn"
+                                                onClick={() => handleDelete(incident)}
+                                                title="Delete incident"
+                                            >
+                                                Delete
+                                            </button>
+                                        )}
                                     </div>
                                 </td>
                             </tr>

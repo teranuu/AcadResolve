@@ -236,24 +236,162 @@ export class IncidentService {
         }
     }
 
-    // Placeholder methods for future custom endpoints
+    // Delete incident (admin only)
+    async delete(sysId) {
+        try {
+            if (this.currentRole !== 'admin') {
+                throw new Error('Only admins can delete incidents')
+            }
+
+            const response = await fetch(`${this.baseUrl}/${sysId}`, {
+                method: 'DELETE',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                },
+            })
+
+            if (!response.ok) {
+                const errorText = await response.text()
+                throw new Error(`API Error ${response.status}: ${errorText || 'Failed to delete'}`)
+            }
+
+            return { success: true }
+        } catch (error) {
+            console.error(`Error deleting incident ${sysId}:`, error)
+            throw error
+        }
+    }
+
+    // Assess incident and calculate fees (manager/admin)
     async assess(sysId) {
-        // TODO: Implement via Business Rule or Flow
-        return { status: 'pending' }
+        try {
+            if (!['manager', 'admin'].includes(this.currentRole)) {
+                throw new Error('Only managers and admins can assess incidents')
+            }
+
+            // Get current incident to calculate fees
+            const incident = await this.get(sysId)
+            const replacementCost = parseFloat(incident.replacement_cost) || 0
+            const incidentType = incident.incident_type || 'Damaged'
+
+            // Calculate fees
+            const feeCalc = await this.calculateFee(replacementCost, incidentType)
+
+            // Update incident with assessment
+            const response = await fetch(`${this.baseUrl}/${sysId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                },
+                body: JSON.stringify({
+                    assessment_status: 'Assessed',
+                    damage_fee: feeCalc.damage_fee,
+                    total_charge: feeCalc.total_charge,
+                }),
+            })
+
+            if (!response.ok) {
+                throw new Error(`HTTP error ${response.status}`)
+            }
+
+            const result = await response.json()
+            return result.result || result
+        } catch (error) {
+            console.error(`Error assessing incident ${sysId}:`, error)
+            throw error
+        }
     }
 
+    // Approve incident (manager/admin)
     async approve(sysId) {
-        // TODO: Implement via Business Rule or Flow
-        return { status: 'pending' }
+        try {
+            if (!['manager', 'admin'].includes(this.currentRole)) {
+                throw new Error('Only managers and admins can approve incidents')
+            }
+
+            const response = await fetch(`${this.baseUrl}/${sysId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                },
+                body: JSON.stringify({
+                    approval_status: 'Approved',
+                }),
+            })
+
+            if (!response.ok) {
+                throw new Error(`HTTP error ${response.status}`)
+            }
+
+            const result = await response.json()
+            return result.result || result
+        } catch (error) {
+            console.error(`Error approving incident ${sysId}:`, error)
+            throw error
+        }
     }
 
+    // Reject incident with reason (manager/admin)
     async reject(sysId, reason) {
-        // TODO: Implement via Business Rule or Flow
-        return { status: 'pending' }
+        try {
+            if (!['manager', 'admin'].includes(this.currentRole)) {
+                throw new Error('Only managers and admins can reject incidents')
+            }
+
+            const response = await fetch(`${this.baseUrl}/${sysId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                },
+                body: JSON.stringify({
+                    approval_status: 'Rejected',
+                    rejection_reason: reason,
+                }),
+            })
+
+            if (!response.ok) {
+                throw new Error(`HTTP error ${response.status}`)
+            }
+
+            const result = await response.json()
+            return result.result || result
+        } catch (error) {
+            console.error(`Error rejecting incident ${sysId}:`, error)
+            throw error
+        }
     }
 
+    // Record payment (manager/admin)
     async recordPayment(sysId, paymentStatus) {
-        // TODO: Implement via Business Rule or Flow
-        return { status: 'pending' }
+        try {
+            if (!['manager', 'admin'].includes(this.currentRole)) {
+                throw new Error('Only managers and admins can record payments')
+            }
+
+            const response = await fetch(`${this.baseUrl}/${sysId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                },
+                body: JSON.stringify({
+                    payment_status: paymentStatus,
+                }),
+            })
+
+            if (!response.ok) {
+                throw new Error(`HTTP error ${response.status}`)
+            }
+
+            const result = await response.json()
+            return result.result || result
+        } catch (error) {
+            console.error(`Error recording payment for ${sysId}:`, error)
+            throw error
+        }
     }
 }
