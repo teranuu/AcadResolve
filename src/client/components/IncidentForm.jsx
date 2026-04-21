@@ -277,23 +277,3 @@ export default function IncidentForm({ incident, onSubmit, onCancel, service }) 
         </div>
     )
 }
-
-                                <option value="2">2 - Medium</option>
-                                <option value="3">3 - Low</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div className="form-actions">
-                        <button type="button" className="cancel-button" onClick={onCancel}>
-                            Cancel
-                        </button>
-                        <button type="submit" className="submit-button">
-                            {isEditing ? 'Update' : 'Create'}
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    )
-}
