@@ -48,15 +48,16 @@ export class IncidentService {
                         studentEmail.includes(this.currentUser.toLowerCase())
                     )
                 })
-            } else if (this.currentRole === 'manager') {
-                // Managers see incidents pending assessment or approval
+            } else if (this.currentRole === 'manager' || this.currentRole === 'librarian') {
+                // Managers and librarians see incidents pending assessment, approval or payment
                 incidents = incidents.filter(
                     (incident) =>
                         (incident.assessment_status || '').toLowerCase() === 'pending' ||
-                        (incident.approval_status || '').toLowerCase() === 'pending'
+                        (incident.approval_status || '').toLowerCase() === 'pending' ||
+                        (incident.payment_status || '').toLowerCase() === 'pending'
                 )
             }
-            // Admin sees all incidents
+            // Admin and other roles see all incidents
 
             return incidents
         } catch (error) {
@@ -263,11 +264,11 @@ export class IncidentService {
         }
     }
 
-    // Assess incident and calculate fees (manager/admin)
+    // Assess incident and calculate fees (manager/librarian/admin)
     async assess(sysId) {
         try {
-            if (!['manager', 'admin'].includes(this.currentRole)) {
-                throw new Error('Only managers and admins can assess incidents')
+            if (!['manager', 'librarian', 'admin'].includes(this.currentRole)) {
+                throw new Error('Only managers, librarians and admins can assess incidents')
             }
 
             console.log(`[Service] Assessing incident: ${sysId}`);
@@ -311,11 +312,11 @@ export class IncidentService {
         }
     }
 
-    // Approve incident (manager/admin)
+    // Approve incident (manager/librarian/admin)
     async approve(sysId) {
         try {
-            if (!['manager', 'admin'].includes(this.currentRole)) {
-                throw new Error('Only managers and admins can approve incidents')
+            if (!['manager', 'librarian', 'admin'].includes(this.currentRole)) {
+                throw new Error('Only managers, librarians and admins can approve incidents')
             }
 
             console.log(`[Service] Approving incident: ${sysId}`);
@@ -345,11 +346,11 @@ export class IncidentService {
         }
     }
 
-    // Reject incident with reason (manager/admin)
+    // Reject incident (manager/librarian/admin)
     async reject(sysId, reason) {
         try {
-            if (!['manager', 'admin'].includes(this.currentRole)) {
-                throw new Error('Only managers and admins can reject incidents')
+            if (!['manager', 'librarian', 'admin'].includes(this.currentRole)) {
+                throw new Error('Only managers, librarians and admins can reject incidents')
             }
 
             const response = await fetch(`${this.baseUrl}/${sysId}`, {
@@ -376,11 +377,11 @@ export class IncidentService {
         }
     }
 
-    // Record payment (manager/admin)
+    // Record payment (manager/librarian/admin)
     async recordPayment(sysId, paymentStatus) {
         try {
-            if (!['manager', 'admin'].includes(this.currentRole)) {
-                throw new Error('Only managers and admins can record payments')
+            if (!['manager', 'librarian', 'admin'].includes(this.currentRole)) {
+                throw new Error('Only managers, librarians and admins can record payments')
             }
 
             const response = await fetch(`${this.baseUrl}/${sysId}`, {
