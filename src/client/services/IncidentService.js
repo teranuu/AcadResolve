@@ -1,9 +1,17 @@
 export class IncidentService {
     constructor() {
         this.baseUrl = '/api/now/v2/table/x_1997678_acadreso_book_incident'
+        this.currentUser = null
+        this.currentRole = null
     }
 
-    // Return all incidents using Table API
+    // Set current user and role for filtering
+    setUser(user, role) {
+        this.currentUser = user
+        this.currentRole = role
+    }
+
+    // Return incidents filtered by role
     async list() {
         try {
             const response = await fetch(`${this.baseUrl}?sysparm_limit=100`, {
@@ -19,7 +27,27 @@ export class IncidentService {
             }
 
             const data = await response.json()
-            return data.result || []
+            let incidents = data.result || []
+
+            // Filter based on current user role
+            if (this.currentRole === 'student' && this.currentUser) {
+                // Students can only see their own incidents
+                incidents = incidents.filter(
+                    (incident) =>
+                        incident.student_email === this.currentUser ||
+                        incident.student_name === this.currentUser
+                )
+            } else if (this.currentRole === 'manager') {
+                // Managers see incidents pending assessment or approval
+                incidents = incidents.filter(
+                    (incident) =>
+                        incident.assessment_status === 'Pending' ||
+                        incident.approval_status === 'Pending'
+                )
+            }
+            // Admin sees all incidents
+
+            return incidents
         } catch (error) {
             console.error('Error fetching incidents:', error)
             throw error
@@ -119,7 +147,7 @@ export class IncidentService {
         }
     }
 
-    // Get dashboard stats (local calculation for now)
+    // Get dashboard stats filtered by role
     async getDashboardStats() {
         try {
             const incidents = await this.list()
@@ -130,12 +158,37 @@ export class IncidentService {
             const paymentCount = incidents.filter(i => i.payment_status === 'Pending').length
             const totalCharges = incidents.reduce((sum, i) => sum + (parseFloat(i.total_charge) || 0), 0)
 
+            // Adjust stats display based on role
+            let statsLabel = {
+                total: 'Total Incidents',
+                pending: 'Pending Assessment',
+                approval: 'Pending Approval',
+                payment: 'Pending Payment',
+            }
+
+            if (this.currentRole === 'student') {
+                statsLabel = {
+                    total: 'My Incidents',
+                    pending: 'Awaiting Assessment',
+                    approval: 'Awaiting Approval',
+                    payment: 'Payment Required',
+                }
+            } else if (this.currentRole === 'manager') {
+                statsLabel = {
+                    total: 'Incidents to Review',
+                    pending: 'To Assess',
+                    approval: 'To Approve',
+                    payment: 'Unpaid',
+                }
+            }
+
             return {
                 total_incidents: totalIncidents,
                 pending_assessment: pendingCount,
                 pending_approval: approvalCount,
                 pending_payment: paymentCount,
                 total_charges: totalCharges.toFixed(2),
+                labels: statsLabel,
             }
         } catch (error) {
             console.error('Error fetching dashboard stats:', error)

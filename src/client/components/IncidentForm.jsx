@@ -60,9 +60,10 @@ export default function IncidentForm({ incident, onSubmit, onCancel, service }) 
         try {
             setLoading(true)
             const result = await service.calculateFee(cost, type)
-            setEstimatedFee(result.total_charge || 0)
+            setEstimatedFee(parseFloat(result.total_charge) || 0)
         } catch (error) {
             console.error('Error calculating fee:', error)
+            setEstimatedFee(0)
         } finally {
             setLoading(false)
         }
