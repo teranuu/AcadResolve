@@ -14,7 +14,7 @@ export class IncidentService {
     // Return incidents filtered by role
     async list() {
         try {
-            const response = await fetch(`${this.baseUrl}?sysparm_limit=100`, {
+            const response = await fetch(`${this.baseUrl}?sysparm_limit=100&sysparm_exclude_reference_link=true`, {
                 method: 'GET',
                 headers: {
                     Accept: 'application/json',
@@ -23,26 +23,37 @@ export class IncidentService {
             })
 
             if (!response.ok) {
-                throw new Error(`HTTP error ${response.status}`)
+                const errorText = await response.text()
+                throw new Error(`API Error ${response.status}: ${errorText || 'Unknown error'}`)
             }
 
             const data = await response.json()
             let incidents = data.result || []
 
+            // Validate response
+            if (!Array.isArray(incidents)) {
+                console.warn('API response is not an array, converting to empty array')
+                incidents = []
+            }
+
             // Filter based on current user role
             if (this.currentRole === 'student' && this.currentUser) {
-                // Students can only see their own incidents
-                incidents = incidents.filter(
-                    (incident) =>
-                        incident.student_email === this.currentUser ||
-                        incident.student_name === this.currentUser
-                )
+                // Students can only see their own incidents (match by username in email or name field)
+                incidents = incidents.filter((incident) => {
+                    const studentEmail = incident.student_email || ''
+                    const studentName = incident.student_name || ''
+                    return (
+                        studentEmail.toLowerCase() === this.currentUser.toLowerCase() ||
+                        studentName.toLowerCase() === this.currentUser.toLowerCase() ||
+                        studentEmail.includes(this.currentUser.toLowerCase())
+                    )
+                })
             } else if (this.currentRole === 'manager') {
                 // Managers see incidents pending assessment or approval
                 incidents = incidents.filter(
                     (incident) =>
-                        incident.assessment_status === 'Pending' ||
-                        incident.approval_status === 'Pending'
+                        (incident.assessment_status || '').toLowerCase() === 'pending' ||
+                        (incident.approval_status || '').toLowerCase() === 'pending'
                 )
             }
             // Admin sees all incidents
@@ -50,7 +61,7 @@ export class IncidentService {
             return incidents
         } catch (error) {
             console.error('Error fetching incidents:', error)
-            throw error
+            throw new Error(`Failed to fetch incidents: ${error.message}`)
         }
     }
 
@@ -152,11 +163,27 @@ export class IncidentService {
         try {
             const incidents = await this.list()
             
+            // Validate incidents array
+            if (!Array.isArray(incidents)) {
+                throw new Error('Invalid incidents data')
+            }
+
             const totalIncidents = incidents.length
-            const pendingCount = incidents.filter(i => i.assessment_status === 'Pending').length
-            const approvalCount = incidents.filter(i => i.approval_status === 'Pending').length
-            const paymentCount = incidents.filter(i => i.payment_status === 'Pending').length
-            const totalCharges = incidents.reduce((sum, i) => sum + (parseFloat(i.total_charge) || 0), 0)
+            const pendingCount = incidents.filter(
+                (i) => (i.assessment_status || '').toLowerCase() === 'pending'
+            ).length
+            const approvalCount = incidents.filter(
+                (i) => (i.approval_status || '').toLowerCase() === 'pending'
+            ).length
+            const paymentCount = incidents.filter(
+                (i) => (i.payment_status || '').toLowerCase() === 'pending'
+            ).length
+            
+            // Calculate total charges with validation
+            const totalCharges = incidents.reduce((sum, i) => {
+                const charge = parseFloat(i.total_charge)
+                return sum + (isNaN(charge) ? 0 : charge)
+            }, 0)
 
             // Adjust stats display based on role
             let statsLabel = {
@@ -192,7 +219,20 @@ export class IncidentService {
             }
         } catch (error) {
             console.error('Error fetching dashboard stats:', error)
-            throw error
+            // Return default stats on error instead of throwing
+            return {
+                total_incidents: 0,
+                pending_assessment: 0,
+                pending_approval: 0,
+                pending_payment: 0,
+                total_charges: '0.00',
+                labels: {
+                    total: 'Total Incidents',
+                    pending: 'Pending Assessment',
+                    approval: 'Pending Approval',
+                    payment: 'Pending Payment',
+                },
+            }
         }
     }
 

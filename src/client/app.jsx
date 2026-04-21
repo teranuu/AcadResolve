@@ -17,6 +17,23 @@ export default function App() {
 
     const incidentService = useMemo(() => new IncidentService(), [])
 
+    // Initialize app with saved session
+    useEffect(() => {
+        const savedUser = localStorage.getItem('acadresolve_user')
+        if (savedUser) {
+            try {
+                const userData = JSON.parse(savedUser)
+                setUser(userData)
+                incidentService.setUser(userData.username, userData.role)
+                // Don't auto-refresh here; let the user effect handle it
+            } catch (err) {
+                console.error('Error restoring session:', err)
+                localStorage.removeItem('acadresolve_user')
+            }
+        }
+        setLoading(false)
+    }, [])
+
     // Handle login
     const handleLogin = (credentials) => {
         const userData = {
@@ -24,44 +41,62 @@ export default function App() {
             role: credentials.role,
             email: `${credentials.username}@acadresolve.edu`,
         }
+        // Save session to localStorage
+        localStorage.setItem('acadresolve_user', JSON.stringify(userData))
         setUser(userData)
         incidentService.setUser(credentials.username, credentials.role)
 
         // Show welcome message
         alert(`Welcome ${credentials.username}! Logged in as ${credentials.role.toUpperCase()}`)
-        void refreshIncidents()
     }
 
     // Handle logout
     const handleLogout = () => {
+        // Clear session from localStorage
+        localStorage.removeItem('acadresolve_user')
         setUser(null)
         setIncidents([])
         setStats(null)
         incidentService.setUser(null, null)
         setShowForm(false)
         setSelectedIncident(null)
+        alert('You have been logged out')
     }
 
     const refreshIncidents = async () => {
-        if (!user) return
+        if (!user) {
+            setLoading(false)
+            return
+        }
 
         try {
             setLoading(true)
             setError(null)
+            
+            // Fetch incidents with role-based filtering
             const data = await incidentService.list()
+            if (!Array.isArray(data)) {
+                throw new Error('Invalid response format: expected array')
+            }
             setIncidents(data)
             
             // Fetch stats
             const statsData = await incidentService.getDashboardStats()
+            if (!statsData) {
+                throw new Error('Failed to fetch dashboard stats')
+            }
             setStats(statsData)
         } catch (err) {
+            console.error('Error fetching incidents:', err)
             setError('Failed to load incidents: ' + (err.message || 'Unknown error'))
-            console.error(err)
+            setIncidents([])
+            setStats(null)
         } finally {
             setLoading(false)
         }
     }
 
+    // Fetch incidents when user changes
     useEffect(() => {
         if (user) {
             void refreshIncidents()
@@ -236,6 +271,7 @@ export default function App() {
                         <IncidentList
                             incidents={filteredIncidents}
                             onEdit={handleEditClick}
+                            onRefresh={refreshIncidents}
                             service={incidentService}
                             userRole={user.role}
                         />

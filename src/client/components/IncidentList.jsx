@@ -26,7 +26,7 @@ export default function IncidentList({ incidents, onEdit, onRefresh, onAction, s
         try {
             await service.assess(incident.sys_id)
             alert('Incident assessed successfully!')
-            onRefresh()
+            if (onRefresh) await onRefresh()
         } catch (error) {
             alert('Failed to assess incident: ' + error.message)
         }
@@ -39,7 +39,7 @@ export default function IncidentList({ incidents, onEdit, onRefresh, onAction, s
         try {
             await service.approve(incident.sys_id)
             alert('Incident approved and payment request sent to student!')
-            onRefresh()
+            if (onRefresh) await onRefresh()
         } catch (error) {
             alert('Failed to approve incident: ' + error.message)
         }
@@ -52,7 +52,7 @@ export default function IncidentList({ incidents, onEdit, onRefresh, onAction, s
         try {
             await service.reject(incident.sys_id, reason)
             alert('Incident rejected!')
-            onRefresh()
+            if (onRefresh) await onRefresh()
         } catch (error) {
             alert('Failed to reject incident: ' + error.message)
         }
@@ -65,7 +65,7 @@ export default function IncidentList({ incidents, onEdit, onRefresh, onAction, s
         try {
             await service.recordPayment(incident.sys_id, status ? 'Paid' : 'Waived')
             alert('Payment recorded successfully!')
-            onRefresh()
+            if (onRefresh) await onRefresh()
         } catch (error) {
             alert('Failed to record payment: ' + error.message)
         }

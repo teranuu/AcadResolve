@@ -25,13 +25,22 @@
 }
 
 .incident-list td {
-    padding: 14px 16px;
+    padding: 16px 14px;
     border-bottom: 1px solid #f0f0f0;
     font-size: 14px;
+    vertical-align: middle;
+}
+
+.incident-list tbody tr {
+    transition: background-color 0.2s ease;
 }
 
 .incident-list tr:hover {
     background-color: #f9fafb;
+}
+
+.incident-list tr:last-child td {
+    border-bottom: none;
 }
 
 .incident-number {
@@ -58,47 +67,58 @@
 
 .type-badge {
     display: inline-block;
-    padding: 4px 12px;
+    padding: 6px 14px;
     background-color: #e3f2fd;
     color: #1976d2;
     border-radius: 12px;
     font-size: 12px;
-    font-weight: 500;
+    font-weight: 600;
+    min-width: 70px;
+    text-align: center;
+    border: 1px solid #90caf9;
 }
 
 /* Status Badges */
 .status-badge {
     display: inline-block;
-    padding: 6px 12px;
+    padding: 6px 14px;
     border-radius: 6px;
     font-size: 12px;
     font-weight: 600;
     white-space: nowrap;
+    min-width: 80px;
+    text-align: center;
+    border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .status-pending {
     background-color: #fff3cd;
     color: #856404;
+    border-color: #ffeaa7;
 }
 
 .status-assessed {
     background-color: #cfe2ff;
     color: #084298;
+    border-color: #b6d4fe;
 }
 
 .status-approved {
     background-color: #d1e7dd;
     color: #0f5132;
+    border-color: #badbcc;
 }
 
 .status-paid {
     background-color: #d1e7dd;
     color: #0f5132;
+    border-color: #badbcc;
 }
 
 .status-rejected {
     background-color: #f8d7da;
     color: #842029;
+    border-color: #f5c2c7;
 }
 
 .state-badge {
@@ -235,6 +255,55 @@
     text-align: center;
     color: #999;
     font-size: 16px;
+}
+
+/* Responsive Tables */
+@media (max-width: 1024px) {
+    .incident-list {
+        margin: 16px;
+        overflow-x: auto;
+    }
+
+    .incident-list table {
+        min-width: 900px;
+    }
+
+    .book-title {
+        max-width: 180px;
+    }
+}
+
+@media (max-width: 768px) {
+    .incident-list {
+        margin: 12px;
+    }
+
+    .incident-list th,
+    .incident-list td {
+        padding: 12px 10px;
+        font-size: 12px;
+    }
+
+    .type-badge,
+    .status-badge {
+        padding: 4px 10px;
+        font-size: 11px;
+        min-width: 65px;
+    }
+
+    .action-btn {
+        padding: 4px 8px;
+        font-size: 11px;
+    }
+
+    .book-title {
+        max-width: 120px;
+        font-size: 12px;
+    }
+
+    .incident-list table {
+        min-width: 800px;
+    }
 }
 
 /* Responsive */
