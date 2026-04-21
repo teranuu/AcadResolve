@@ -13,7 +13,7 @@ export default function IncidentForm({ incident, onSubmit, onCancel, service }) 
         student_name: '',
         student_email: '',
         student_id: '',
-        incident_type: 'Damaged',
+        incident_type: 'damaged',
         incident_date: new Date().toISOString().split('T')[0],
         description: '',
         replacement_cost: '',
@@ -29,7 +29,7 @@ export default function IncidentForm({ incident, onSubmit, onCancel, service }) 
                 student_name: incident.student_name || '',
                 student_email: incident.student_email || '',
                 student_id: incident.student_id || '',
-                incident_type: incident.incident_type || 'Damaged',
+                incident_type: incident.incident_type || 'damaged',
                 incident_date: incident.incident_date || new Date().toISOString().split('T')[0],
                 description: incident.description || '',
                 replacement_cost: incident.replacement_cost || '',
@@ -178,8 +178,8 @@ export default function IncidentForm({ incident, onSubmit, onCancel, service }) 
                                     value={formData.incident_type}
                                     onChange={handleChange}
                                 >
-                                    <option value="Damaged">Damaged</option>
-                                    <option value="Loss">Lost</option>
+                                    <option value="damaged">Damaged</option>
+                                    <option value="loss">Lost</option>
                                 </select>
                             </div>
                         </div>
@@ -255,7 +255,7 @@ export default function IncidentForm({ incident, onSubmit, onCancel, service }) 
                                     {parseFloat(formData.replacement_cost || 0).toFixed(2)}
                                 </p>
                                 <p>
-                                    <strong>Fee ({formData.incident_type === 'Loss' ? '100%' : '10%'}):</strong> $
+                                    <strong>Fee ({formData.incident_type === 'loss' ? '100%' : '10%'}):</strong> $
                                     {(estimatedFee - parseFloat(formData.replacement_cost || 0)).toFixed(2)}
                                 </p>
                                 <p className="total">

@@ -134,7 +134,10 @@ export default function IncidentList({ incidents, onEdit, onRefresh, onAction, s
                                 <td className="student-name">{incident.student_name}</td>
                                 <td>
                                     <span className="type-badge">
-                                        {incident.incident_type ? String(incident.incident_type).charAt(0).toUpperCase() + String(incident.incident_type).slice(1) : ''}
+                                        {(() => {
+                                            const type = incident.incident_type || 'damaged';
+                                            return String(type).charAt(0).toUpperCase() + String(type).slice(1);
+                                        })()}
                                     </span>
                                 </td>
                                 <td>

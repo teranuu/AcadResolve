@@ -149,7 +149,7 @@ export class IncidentService {
             const damageFeePercent = 10
             const lossFeePercent = 100
             
-            const feePercent = incidentType === 'Loss' ? lossFeePercent : damageFeePercent
+            const feePercent = String(incidentType).toLowerCase() === 'loss' ? lossFeePercent : damageFeePercent
             const damageFee = replacementCost * (feePercent / 100)
             const totalCharge = replacementCost + damageFee
 
@@ -281,7 +281,7 @@ export class IncidentService {
             // Get current incident to calculate fees
             const incident = await this.get(sysId)
             const replacementCost = parseFloat(incident.replacement_cost) || 0
-            const incidentType = incident.incident_type || 'Damaged'
+            const incidentType = incident.incident_type || 'damaged'
 
             console.log(`[Service] Current incident: Assessment=${incident.assessment_status}, Approval=${incident.approval_status}`);
 

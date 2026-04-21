@@ -76,6 +76,7 @@
     min-width: 70px;
     text-align: center;
     border: 1px solid #90caf9;
+    text-transform: capitalize;
 }
 
 /* Status Badges */
@@ -89,6 +90,7 @@
     min-width: 80px;
     text-align: center;
     border: 1px solid rgba(0, 0, 0, 0.1);
+    text-transform: capitalize;
 }
 
 .status-pending {
@@ -127,6 +129,7 @@
     border-radius: 4px;
     font-size: 12px;
     font-weight: 500;
+    text-transform: capitalize;
 }
 
 .state-new {
@@ -160,6 +163,7 @@
     border-radius: 4px;
     font-size: 12px;
     font-weight: 600;
+    text-transform: capitalize;
 }
 
 .impact-high {
@@ -386,6 +390,7 @@
     border-radius: 12px;
     font-size: 12px;
     font-weight: 600;
+    text-transform: capitalize;
 }
 
 /* State colors */
