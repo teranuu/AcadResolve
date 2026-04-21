@@ -270,13 +270,17 @@ export class IncidentService {
                 throw new Error('Only managers and admins can assess incidents')
             }
 
+            console.log(`[Service] Assessing incident: ${sysId}`);
             // Get current incident to calculate fees
             const incident = await this.get(sysId)
             const replacementCost = parseFloat(incident.replacement_cost) || 0
             const incidentType = incident.incident_type || 'Damaged'
 
+            console.log(`[Service] Current incident: Assessment=${incident.assessment_status}, Approval=${incident.approval_status}`);
+
             // Calculate fees
             const feeCalc = await this.calculateFee(replacementCost, incidentType)
+            console.log(`[Service] Calculated fees: ${JSON.stringify(feeCalc)}`);
 
             // Update incident with assessment
             const response = await fetch(`${this.baseUrl}/${sysId}`, {
@@ -293,11 +297,14 @@ export class IncidentService {
             })
 
             if (!response.ok) {
-                throw new Error(`HTTP error ${response.status}`)
+                const errorText = await response.text()
+                throw new Error(`HTTP error ${response.status}: ${errorText}`)
             }
 
             const result = await response.json()
-            return result.result || result
+            const returnData = result.result || result
+            console.log(`[Service] Assess response:`, returnData);
+            return returnData
         } catch (error) {
             console.error(`Error assessing incident ${sysId}:`, error)
             throw error
@@ -311,6 +318,7 @@ export class IncidentService {
                 throw new Error('Only managers and admins can approve incidents')
             }
 
+            console.log(`[Service] Approving incident: ${sysId}`);
             const response = await fetch(`${this.baseUrl}/${sysId}`, {
                 method: 'PATCH',
                 headers: {
@@ -323,11 +331,14 @@ export class IncidentService {
             })
 
             if (!response.ok) {
-                throw new Error(`HTTP error ${response.status}`)
+                const errorText = await response.text()
+                throw new Error(`HTTP error ${response.status}: ${errorText}`)
             }
 
             const result = await response.json()
-            return result.result || result
+            const returnData = result.result || result
+            console.log(`[Service] Approve response:`, returnData);
+            return returnData
         } catch (error) {
             console.error(`Error approving incident ${sysId}:`, error)
             throw error

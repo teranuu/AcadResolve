@@ -37,23 +37,34 @@ export default function IncidentList({ incidents, onEdit, onRefresh, onAction, s
             return
         }
         try {
-            await service.assess(incident.sys_id)
-            alert('Incident assessed successfully!')
-            if (onRefresh) await onRefresh()
+            console.log(`Assessing incident: ${incident.sys_id}`);
+            const result = await service.assess(incident.sys_id)
+            console.log('Assess result:', result);
+            alert(`Incident assessed successfully! Charge: $${result.total_charge?.toFixed(2) || 'calculated'}`)
+            if (onRefresh) {
+                await onRefresh()
+                console.log('Incidents refreshed after assess');
+            }
         } catch (error) {
+            console.error('Error in handleAssess:', error);
             alert('Failed to assess incident: ' + error.message)
         }
     }
 
     const handleApprove = async (incident) => {
-        if (!window.confirm('Approve this incident?')) {
+        if (!window.confirm('Approve this incident? This will notify the student for payment.')) {
             return
         }
         try {
+            console.log(`Approving incident: ${incident.sys_id}`);
             await service.approve(incident.sys_id)
-            alert('Incident approved and payment request sent to student!')
-            if (onRefresh) await onRefresh()
+            alert('Incident approved! Payment notification sent to student.')
+            if (onRefresh) {
+                await onRefresh()
+                console.log('Incidents refreshed after approve');
+            }
         } catch (error) {
+            console.error('Error in handleApprove:', error);
             alert('Failed to approve incident: ' + error.message)
         }
     }
@@ -63,10 +74,15 @@ export default function IncidentList({ incidents, onEdit, onRefresh, onAction, s
         if (!reason) return
 
         try {
+            console.log(`Rejecting incident: ${incident.sys_id}`);
             await service.reject(incident.sys_id, reason)
             alert('Incident rejected!')
-            if (onRefresh) await onRefresh()
+            if (onRefresh) {
+                await onRefresh()
+                console.log('Incidents refreshed after reject');
+            }
         } catch (error) {
+            console.error('Error in handleReject:', error);
             alert('Failed to reject incident: ' + error.message)
         }
     }
@@ -76,10 +92,16 @@ export default function IncidentList({ incidents, onEdit, onRefresh, onAction, s
         if (status === null) return
 
         try {
-            await service.recordPayment(incident.sys_id, status ? 'Paid' : 'Waived')
-            alert('Payment recorded successfully!')
-            if (onRefresh) await onRefresh()
+            const paymentStatus = status ? 'Paid' : 'Waived'
+            console.log(`Recording payment as ${paymentStatus} for incident: ${incident.sys_id}`);
+            await service.recordPayment(incident.sys_id, paymentStatus)
+            alert(`Payment recorded as ${paymentStatus}!`)
+            if (onRefresh) {
+                await onRefresh()
+                console.log('Incidents refreshed after payment');
+            }
         } catch (error) {
+            console.error('Error in handleRecordPayment:', error);
             alert('Failed to record payment: ' + error.message)
         }
     }

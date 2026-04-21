@@ -73,11 +73,19 @@ export default function App() {
             setLoading(true)
             setError(null)
             
+            console.log(`[App] Refreshing incidents for user: ${user.username} (${user.role})`)
             // Fetch incidents with role-based filtering
             const data = await incidentService.list()
             if (!Array.isArray(data)) {
                 throw new Error('Invalid response format: expected array')
             }
+            console.log(`[App] Fetched ${data.length} incidents:`, data.map(d => ({
+                sys_id: d.sys_id,
+                assessment_status: d.assessment_status,
+                approval_status: d.approval_status,
+                payment_status: d.payment_status,
+                incident_number: d.incident_number
+            })))
             setIncidents(data)
             
             // Fetch stats
@@ -85,9 +93,10 @@ export default function App() {
             if (!statsData) {
                 throw new Error('Failed to fetch dashboard stats')
             }
+            console.log(`[App] Stats updated:`, statsData)
             setStats(statsData)
         } catch (err) {
-            console.error('Error fetching incidents:', err)
+            console.error('[App] Error fetching incidents:', err)
             setError('Failed to load incidents: ' + (err.message || 'Unknown error'))
             setIncidents([])
             setStats(null)
