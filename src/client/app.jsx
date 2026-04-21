@@ -17,20 +17,8 @@ export default function App() {
 
     const incidentService = useMemo(() => new IncidentService(), [])
 
-    // Initialize app with saved session
+    // Initialize app on mount
     useEffect(() => {
-        const savedUser = localStorage.getItem('acadresolve_user')
-        if (savedUser) {
-            try {
-                const userData = JSON.parse(savedUser)
-                setUser(userData)
-                incidentService.setUser(userData.username, userData.role)
-                // Don't auto-refresh here; let the user effect handle it
-            } catch (err) {
-                console.error('Error restoring session:', err)
-                localStorage.removeItem('acadresolve_user')
-            }
-        }
         setLoading(false)
     }, [])
 
@@ -41,8 +29,6 @@ export default function App() {
             role: credentials.role,
             email: `${credentials.username}@acadresolve.edu`,
         }
-        // Save session to localStorage
-        localStorage.setItem('acadresolve_user', JSON.stringify(userData))
         setUser(userData)
         incidentService.setUser(credentials.username, credentials.role)
 
@@ -53,8 +39,6 @@ export default function App() {
     // Handle logout
     const handleLogout = () => {
         console.log('[App] handleLogout called')
-        // Clear session from localStorage
-        localStorage.removeItem('acadresolve_user')
         setUser(null)
         setIncidents([])
         setStats(null)
