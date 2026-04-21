@@ -20,6 +20,7 @@
     position: relative;
     display: flex;
     align-items: center;
+    z-index: 100;
 }
 
 .menu-badge {
@@ -103,8 +104,9 @@
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
     min-width: 250px;
     margin-top: 0.5rem;
-    z-index: 1000;
+    z-index: 9999;
     animation: slideDown 0.2s ease;
+    overflow: visible;
 }
 
 @keyframes slideDown {

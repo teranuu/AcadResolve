@@ -206,7 +206,7 @@ export default function App() {
                                 Fair charges for lost/damaged items with integrated assessment and settlement
                             </p>
                         </div>
-                        {user.role === 'student' && (
+                        {(user.role === 'student' || user.role === 'admin') && (
                             <button className="create-button" onClick={handleCreateClick}>
                                 + Report Incident
                             </button>
