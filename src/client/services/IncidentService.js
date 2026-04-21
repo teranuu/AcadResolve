@@ -50,11 +50,17 @@ export class IncidentService {
                 })
             } else if (this.currentRole === 'manager' || this.currentRole === 'librarian') {
                 // Managers and librarians see incidents pending assessment, approval or payment
+                // Note: Newly created incidents might have empty status fields, so we treat empty as 'pending'
                 incidents = incidents.filter(
-                    (incident) =>
-                        (incident.assessment_status || '').toLowerCase() === 'pending' ||
-                        (incident.approval_status || '').toLowerCase() === 'pending' ||
-                        (incident.payment_status || '').toLowerCase() === 'pending'
+                    (incident) => {
+                        const assessStatus = (incident.assessment_status || 'pending').toLowerCase();
+                        const approveStatus = (incident.approval_status || 'pending').toLowerCase();
+                        const payStatus = (incident.payment_status || 'pending').toLowerCase();
+                        
+                        return assessStatus === 'pending' || 
+                               approveStatus === 'pending' || 
+                               payStatus === 'pending';
+                    }
                 )
             }
             // Admin and other roles see all incidents
@@ -171,13 +177,13 @@ export class IncidentService {
 
             const totalIncidents = incidents.length
             const pendingCount = incidents.filter(
-                (i) => (i.assessment_status || '').toLowerCase() === 'pending'
+                (i) => (i.assessment_status || 'pending').toLowerCase() === 'pending'
             ).length
             const approvalCount = incidents.filter(
-                (i) => (i.approval_status || '').toLowerCase() === 'pending'
+                (i) => (i.approval_status || 'pending').toLowerCase() === 'pending'
             ).length
             const paymentCount = incidents.filter(
-                (i) => (i.payment_status || '').toLowerCase() === 'pending'
+                (i) => (i.payment_status || 'pending').toLowerCase() === 'pending'
             ).length
             
             // Calculate total charges with validation

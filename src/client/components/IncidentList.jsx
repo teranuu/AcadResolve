@@ -3,16 +3,17 @@ import './IncidentList.css'
 
 export default function IncidentList({ incidents, onEdit, onRefresh, onAction, service, userRole }) {
     const getStatusClass = (status) => {
-        switch (status) {
-            case 'Pending':
+        const s = (status || 'Pending').toLowerCase()
+        switch (s) {
+            case 'pending':
                 return 'status-pending'
-            case 'Assessed':
+            case 'assessed':
                 return 'status-assessed'
-            case 'Approved':
+            case 'approved':
                 return 'status-approved'
-            case 'Paid':
+            case 'paid':
                 return 'status-paid'
-            case 'Rejected':
+            case 'rejected':
                 return 'status-rejected'
             default:
                 return ''
@@ -138,24 +139,24 @@ export default function IncidentList({ incidents, onEdit, onRefresh, onAction, s
                                 </td>
                                 <td>
                                     <span className={`status-badge ${getStatusClass(incident.assessment_status)}`}>
-                                        {incident.assessment_status}
+                                        {incident.assessment_status || 'Pending'}
                                     </span>
                                 </td>
                                 <td className="charge">${parseFloat(incident.total_charge || 0).toFixed(2)}</td>
                                 <td>
                                     <span className={`status-badge ${getStatusClass(incident.payment_status)}`}>
-                                        {incident.payment_status}
+                                        {incident.payment_status || 'Pending'}
                                     </span>
                                 </td>
                                 <td>
                                     <span className={`status-badge ${getStatusClass(incident.approval_status)}`}>
-                                        {incident.approval_status}
+                                        {incident.approval_status || 'Pending'}
                                     </span>
                                 </td>
                                 <td>
                                     <div className="action-buttons">
                                         {/* Assessment actions - Manager/Librarian/Admin only */}
-                                        {['manager', 'librarian', 'admin'].includes(userRole) && (incident.assessment_status || '').toLowerCase() === 'pending' && (
+                                        {['manager', 'librarian', 'admin'].includes(userRole) && (incident.assessment_status || 'pending').toLowerCase() === 'pending' && (
                                             <button
                                                 className="action-btn assess-btn"
                                                 onClick={() => handleAssess(incident)}
@@ -165,8 +166,8 @@ export default function IncidentList({ incidents, onEdit, onRefresh, onAction, s
                                             </button>
                                         )}
                                         {/* Approval actions - Manager/Librarian/Admin only */}
-                                        {['manager', 'librarian', 'admin'].includes(userRole) && (incident.assessment_status || '').toLowerCase() === 'assessed' &&
-                                            (incident.approval_status || '').toLowerCase() === 'pending' && (
+                                        {['manager', 'librarian', 'admin'].includes(userRole) && (incident.assessment_status || 'pending').toLowerCase() === 'assessed' &&
+                                            (incident.approval_status || 'pending').toLowerCase() === 'pending' && (
                                                 <>
                                                     <button
                                                         className="action-btn approve-btn"
@@ -185,8 +186,8 @@ export default function IncidentList({ incidents, onEdit, onRefresh, onAction, s
                                                 </>
                                             )}
                                         {/* Payment actions - Manager/Librarian/Admin only */}
-                                        {['manager', 'librarian', 'admin'].includes(userRole) && (incident.approval_status || '').toLowerCase() === 'approved' &&
-                                            (incident.payment_status || '').toLowerCase() === 'pending' && (
+                                        {['manager', 'librarian', 'admin'].includes(userRole) && (incident.approval_status || 'pending').toLowerCase() === 'approved' &&
+                                            (incident.payment_status || 'pending').toLowerCase() === 'pending' && (
                                                 <button
                                                     className="action-btn payment-btn"
                                                     onClick={() => handleRecordPayment(incident)}
